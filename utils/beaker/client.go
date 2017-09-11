@@ -3,7 +3,7 @@ package beaker
 import (
 	"os/exec"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var cmds = map[string]string{
@@ -23,21 +23,16 @@ func NewBeaker(bkrName string) *Beaker {
 }
 
 // Reboot is
-func (b Beaker) Reboot() []byte {
+func (b Beaker) Reboot() ([]byte, error) {
 	out, err := exec.Command("bkr", "system-power", "--action", "reboot",
-		b.SystemName).Output()
-
-	if err != nil {
-		log.Error(err)
-	}
-	log.Info(out)
-	return out
+		b.SystemName).CombinedOutput()
+	return out, err
 }
 
 // PowerOn is
 func (b Beaker) PowerOn() {
 	out, err := exec.Command("bkr", "system-power", "--action", "on",
-		b.SystemName).Output()
+		b.SystemName).CombinedOutput()
 
 	if err != nil {
 		log.Error(err)
@@ -48,7 +43,7 @@ func (b Beaker) PowerOn() {
 // PowerOff is
 func (b Beaker) PowerOff() {
 	out, err := exec.Command("bkr", "system-power", "--action", "off",
-		b.SystemName).Output()
+		b.SystemName).CombinedOutput()
 
 	if err != nil {
 		log.Error(err)

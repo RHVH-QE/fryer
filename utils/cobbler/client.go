@@ -2,14 +2,41 @@ package cobbler
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 
-	log "github.com/Sirupsen/logrus"
-
-	"fmt"
-
+	"github.com/BurntSushi/toml"
 	"github.com/divan/gorilla-xmlrpc/xml"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/dracher/helpers"
 )
+
+var config = Config{}
+
+// Config is
+type Config struct {
+	Cobbler struct {
+		APIURL string `toml:"api_url"`
+		User   string
+		Pass   string
+	}
+}
+
+func init() {
+	if helpers.FileExists("./config.toml") {
+		_, err := toml.DecodeFile("./config.toml", &config)
+		if err != nil {
+			log.Panic(err)
+		}
+		log.Infof("init cobbler with params %v", config.Cobbler)
+	} else {
+		log.Warn("can not find [config.toml] under current path, init cobler service with default value")
+		config.Cobbler.APIURL = "http://10.73.60.74/cobbler_api"
+		config.Cobbler.User = "cobbler"
+		config.Cobbler.Pass = "cobbler"
+	}
+}
 
 // Cobbler represent a cobbler instance
 type Cobbler struct {
@@ -34,9 +61,9 @@ func (c Cobbler) xmlRPCCall(method string, args interface{}) (reply struct{ Mess
 // NewCobbler is
 func NewCobbler() *Cobbler {
 	cb := &Cobbler{
-		APIURL:   "http://10.73.60.74/cobbler_api",
-		Username: "cobbler",
-		Password: "cobbler",
+		APIURL:   config.Cobbler.APIURL,
+		Username: config.Cobbler.User,
+		Password: config.Cobbler.Pass,
 	}
 	cb.login()
 	return cb

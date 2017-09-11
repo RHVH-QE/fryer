@@ -5,9 +5,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/dracher/rhvhhelpers/model"
+	jwt "github.com/appleboy/gin-jwt"
+	"github.com/dracher/fryer/model"
 	"github.com/gin-gonic/gin"
-	jwt "gopkg.in/appleboy/gin-jwt.v2"
 )
 
 const (
@@ -28,7 +28,6 @@ func InitJWTAuthware() *jwt.GinJWTMiddleware {
 				return user.Username, true
 			}
 			return "", false
-
 		},
 		Authorizator: func(userID string, c *gin.Context) bool {
 			ret, _ := c.Get("db")
