@@ -1,15 +1,21 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/dracher/fryer/autocore"
 
-	"fmt"
+	jwt "github.com/appleboy/gin-jwt"
+	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/dracher/fryer/utils/beaker"
 	"github.com/dracher/fryer/utils/cobbler"
-	"github.com/gin-gonic/gin"
+)
+
+const (
+	OK = http.StatusOK
 )
 
 // BeakerHandler is
@@ -31,7 +37,7 @@ func BeakerHandler(c *gin.Context) {
 	default:
 		log.Infof("no action performed on %s", name)
 	}
-	c.String(http.StatusOK, fmt.Sprintf("%s %s is complete", name, action))
+	c.String(OK, fmt.Sprintf("%s %s is complete", name, action))
 }
 
 // SystemParams is
@@ -54,7 +60,7 @@ func CobblerHandler(c *gin.Context) {
 			c.String(http.StatusPreconditionFailed, "create system failed")
 		} else {
 			cb.NewSystem(sp.Name, sp.Profile, sp.Comment, sp.Status, sp.Kargs, sp.Nic)
-			c.String(http.StatusOK, "create system ok")
+			c.String(OK, "create system ok")
 		}
 
 	} else if c.Request.Method == "DELETE" {
@@ -63,30 +69,56 @@ func CobblerHandler(c *gin.Context) {
 			c.String(http.StatusPreconditionFailed, "remove system failed")
 		} else {
 			cb.RemoveSystem(sp.Name)
-			c.String(http.StatusOK, "remove system ok")
+			c.String(OK, "remove system ok")
 		}
 	}
 }
 
-// ProvisionHandler is
-func ProvisionHandler(c *gin.Context) {
-	var sp SystemParams
-	if err := c.BindJSON(&sp); err != nil {
-		log.Error(err.Error())
-		c.String(http.StatusPreconditionFailed, "provision system failed")
+// ConfigParamsHandler is
+func ConfigParamsHandler(c *gin.Context) {
+	name := c.Param("name")
+	q := getQuery(c)
+	switch name {
+	case "common":
+		ret, _ := q.CommonParams()
+		c.JSON(OK, ret)
+	case "hosts":
+		ret, _ := q.Hosts()
+		c.JSON(OK, ret)
+	case "tiers":
+		ret, _ := q.AutoTestTiers()
+		c.JSON(OK, ret)
+	case "casemap":
+		ret, _ := q.AutoTestCaseMap()
+		c.JSON(OK, ret)
+	default:
+		c.JSON(OK, nil)
+	}
+}
+
+// CurrentSchedulerStatusHandler is
+func CurrentSchedulerStatusHandler(c *gin.Context) {
+	autocore.Scheduler.Lock.RLock()
+	defer autocore.Scheduler.Lock.RUnlock()
+	c.JSON(OK, autocore.Scheduler.Pool)
+}
+
+// DebugHandler is
+func DebugHandler(c *gin.Context) {
+	claims := jwt.ExtractClaims(c)
+	fmt.Println(claims)
+	c.JSON(OK, "OK")
+}
+
+// ProvisonHandler is
+func ProvisonHandler(c *gin.Context) {
+	claims := jwt.ExtractClaims(c)
+	uname := claims["id"].(string)
+	bkrName := c.Param("bkrname")
+	err := autocore.CheckHostAvailable(bkrName, uname)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ret": err.Error()})
 	} else {
-		if machinePool.CheckInUse(sp.Name) {
-			c.String(http.StatusForbidden, fmt.Sprintf("%s in used", sp.Name))
-		} else {
-			machinePool.MarkMachine(sp.Name)
-			// cobbler.NewCobbler().NewSystem(sp.Name, sp.Profile, sp.Comment, sp.Status, sp.Kargs, sp.Nic)
-			// beaker.Beaker{SystemName: sp.Name}.Reboot()
-			c.String(http.StatusOK, fmt.Sprintf("%s provision complete", sp.Name))
-		}
+		c.JSON(OK, gin.H{"ret": "Provison Started"})
 	}
-}
-
-// MachinesListHandler is
-func MachinesListHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, machinePool.MachinesList())
 }

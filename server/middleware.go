@@ -3,8 +3,6 @@ package server
 import (
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/dracher/fryer/model"
 	"github.com/gin-gonic/gin"
@@ -17,36 +15,49 @@ const (
 // InitJWTAuthware is
 func InitJWTAuthware() *jwt.GinJWTMiddleware {
 	authMiddleware := &jwt.GinJWTMiddleware{
-		Realm:   "RHVH Helper",
-		Key:     []byte(jwtKey),
-		Timeout: 24 * time.Hour,
-		Authenticator: func(userID string, password string, c *gin.Context) (string, bool) {
-			ret, _ := c.Get("db")
-			db := ret.(*model.Database)
-			user := db.CheckUser(userID, password)
-			if user.Username == userID {
-				return user.Username, true
-			}
-			return "", false
+		Realm:      "fryer",
+		Key:        []byte(jwtKey),
+		Timeout:    time.Hour,
+		MaxRefresh: time.Hour,
+		Authenticator: func(userId string, password string, c *gin.Context) (string, bool) {
+			q := getQuery(c)
+			return q.CheckUser(userId, password)
 		},
-		Authorizator: func(userID string, c *gin.Context) bool {
-			ret, _ := c.Get("db")
-			db := ret.(*model.Database)
-			user := db.FindUser(userID)
-			log.Debug(user)
-			return user.Regular
+		Authorizator: func(userId string, c *gin.Context) bool {
+			q := getQuery(c)
+			u, _ := q.User("KrbID", userId)
+			return u.Admin
 		},
-		PayloadFunc: func(userID string) map[string]interface{} {
-			return make(map[string]interface{})
+		Unauthorized: func(c *gin.Context, code int, message string) {
+			c.JSON(code, gin.H{
+				"code":    code,
+				"message": message,
+			})
 		},
+		// TokenLookup is a string in the form of "<source>:<name>" that is used
+		// to extract token from the request.
+		// Optional. Default value "header:Authorization".
+		// Possible values:
+		// - "header:<name>"
+		// - "query:<name>"
+		// - "cookie:<name>"
+		TokenLookup: "header:Authorization",
+		// TokenLookup: "query:token",
+		// TokenLookup: "cookie:token",
+
+		// TokenHeadName is a string in the header. Default value is "Bearer"
+		TokenHeadName: "Bearer",
+
+		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
+		TimeFunc: time.Now,
 	}
 	return authMiddleware
 }
 
 // DatabaseWare is
-func DatabaseWare(db *model.Database) gin.HandlerFunc {
+func DatabaseWare(q *model.Query) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("db", db)
+		c.Set("q", q)
 		c.Next()
 	}
 }

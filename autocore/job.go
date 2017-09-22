@@ -4,8 +4,8 @@ import (
 	"github.com/looplab/fsm"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/dracher/rhvhhelpers/utils/beaker"
-	"github.com/dracher/rhvhhelpers/utils/cobbler"
+	"github.com/dracher/fryer/utils/beaker"
+	"github.com/dracher/fryer/utils/cobbler"
 )
 
 // NewJob returns a job with unique name, noramlly is beaker name

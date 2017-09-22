@@ -16,6 +16,7 @@ type Host struct {
 	BeakerName string `storm:"index"`
 	NicName    string
 	Mac        string
+	AutoOnly   bool
 }
 
 // KickstartScript is
@@ -26,7 +27,7 @@ type KickstartScript struct {
 
 // AutoTestTiers is
 type AutoTestTiers struct {
-	ID            int // primary key
+	ID            string // primary key
 	DebugTier     int
 	AnacondaTier1 int
 	AnacondaTier2 int
