@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"time"
@@ -6,6 +6,8 @@ import (
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/dracher/fryer/model"
 	"github.com/gin-gonic/gin"
+
+	"github.com/dracher/fryer/helper"
 )
 
 const (
@@ -20,11 +22,11 @@ func InitJWTAuthware() *jwt.GinJWTMiddleware {
 		Timeout:    time.Hour,
 		MaxRefresh: time.Hour,
 		Authenticator: func(userId string, password string, c *gin.Context) (string, bool) {
-			q := getQuery(c)
+			q := helper.GetQuery(c)
 			return q.CheckUser(userId, password)
 		},
 		Authorizator: func(userId string, c *gin.Context) bool {
-			q := getQuery(c)
+			q := helper.GetQuery(c)
 			u, _ := q.User("KrbID", userId)
 			return u.Admin
 		},

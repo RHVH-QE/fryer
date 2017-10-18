@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BurntSushi/toml"
 	"github.com/divan/gorilla-xmlrpc/xml"
-	log "github.com/sirupsen/logrus"
 
-	"github.com/dracher/helpers"
+	"github.com/dracher/fryer/helper"
+	"github.com/dracher/fryer/model"
 )
 
 var config = Config{}
+var log = helper.GetZapLogger()
 
 // Config is
 type Config struct {
@@ -23,19 +23,18 @@ type Config struct {
 	}
 }
 
-func init() {
-	if helpers.FileExists("./config.toml") {
-		_, err := toml.DecodeFile("./config.toml", &config)
-		if err != nil {
-			log.Panic(err)
-		}
-		log.Infof("init cobbler with params %v", config.Cobbler)
-	} else {
-		log.Warn("can not find [config.toml] under current path, init cobler service with default value")
-		config.Cobbler.APIURL = "http://10.73.60.74/cobbler_api"
-		config.Cobbler.User = "cobbler"
-		config.Cobbler.Pass = "cobbler"
+// InitCobblerConfig is
+func InitCobblerConfig(q *model.Query) {
+	params, err := q.CommonParams()
+	if err != nil {
+		log.Panic(err)
 	}
+	config.Cobbler.APIURL = params.CobblerAPI
+	config.Cobbler.User = params.CobblerCredential[0]
+	config.Cobbler.Pass = params.CobblerCredential[1]
+	log.Infof(
+		"Init cobbler instance with %s, %s, %s finished",
+		config.Cobbler.APIURL, config.Cobbler.User, config.Cobbler.Pass)
 }
 
 // Cobbler represent a cobbler instance

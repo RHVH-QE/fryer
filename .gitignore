@@ -1,2 +1,4 @@
 fixtures.go
 gin-bin
+.venv
+.vscode

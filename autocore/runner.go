@@ -14,3 +14,7 @@ func CheckHostAvailable(bkrName, userName string) error {
 	Scheduler.SetAvailable(bkrName, userName, false)
 	return nil
 }
+
+func StartProvison(bkrName, userName string) {
+	
+}

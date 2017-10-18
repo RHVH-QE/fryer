@@ -3,15 +3,19 @@ package autocore
 import (
 	"sync"
 
+	"github.com/dracher/fryer/helper"
 	"github.com/dracher/fryer/model"
 	"github.com/looplab/fsm"
 )
+
+var log = helper.GetZapLogger()
 
 // Attrs is
 type Attrs struct {
 	ReseverdBy string
 	Available  bool
 	Jobs       []*fsm.FSM
+	SessionID  string
 }
 
 type scheduler struct {
@@ -30,6 +34,7 @@ func (s *scheduler) SetAvailable(bkrName, userName string, b bool) {
 		ReseverdBy: userName,
 		Available:  b,
 		Jobs:       s.Pool[bkrName].Jobs,
+		SessionID:  helper.RandStringBytesMaskImprSrc(12),
 	}
 }
 
@@ -41,4 +46,5 @@ func InitScheduler(hosts []model.Host) {
 			Available:  true,
 		}
 	}
+	log.Infof("Init scheduler with %s finished", hosts)
 }

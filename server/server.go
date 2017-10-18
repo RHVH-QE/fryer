@@ -2,10 +2,11 @@ package server
 
 import (
 	"github.com/dracher/fryer/model"
+	hf "github.com/dracher/fryer/server/handlers"
 	"github.com/gin-gonic/gin"
 )
 
-var authMiddleware = InitJWTAuthware()
+var authMiddleware = hf.InitJWTAuthware()
 
 // InitApp will return the server instance
 func InitApp(prod bool, q *model.Query) *gin.Engine {
@@ -13,25 +14,26 @@ func InitApp(prod bool, q *model.Query) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	app := gin.Default()
+	app.Use(hf.DatabaseWare(q))
 
-	app.Use(DatabaseWare(q))
 	{
-
 		app.POST("/login", authMiddleware.LoginHandler)
-		app.POST("/cobbler", CobblerHandler)
-		app.DELETE("/cobbler", CobblerHandler)
-		app.POST("/beaker/:bkrname/:action", BeakerHandler)
 
-		app.GET("/config/:name", ConfigParamsHandler)
-		app.GET("/current/scheduler", CurrentSchedulerStatusHandler)
+		app.POST("/cobbler", hf.CobblerHandler)
+		app.DELETE("/cobbler", hf.CobblerHandler)
+
+		app.POST("/beaker/:bkrname/:action", hf.BeakerHandler)
+
+		app.GET("/config/:name", hf.ConfigParamsHandler)
+		app.GET("/current/scheduler", hf.CurrentSchedulerStatusHandler)
 	}
 
 	auth := app.Group("/auth").Use(authMiddleware.MiddlewareFunc())
 	{
-		auth.GET("/debug", DebugHandler)
+		auth.GET("/debug", hf.DebugHandler)
 		auth.GET("/refresh", authMiddleware.LoginHandler)
 
-		auth.GET("/provision/:bkrname", ProvisonHandler)
+		auth.POST("/provision/:bkrname/:runtype", hf.ProvisonHandler)
 	}
 	return app
 }
