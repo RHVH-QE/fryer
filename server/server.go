@@ -35,5 +35,10 @@ func InitApp(prod bool, q *model.Query) *gin.Engine {
 
 		auth.POST("/provision/:bkrname/:runtype", hf.ProvisonHandler)
 	}
+
+	{
+		auth.POST("/host", hf.AddHostHandler)
+		auth.PUT("/host", hf.UpdateHandler)
+	}
 	return app
 }
