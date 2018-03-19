@@ -68,6 +68,16 @@ func NewCobbler() *Cobbler {
 	return cb
 }
 
+func NewCobblerManual() *Cobbler {
+	cb := &Cobbler{
+		APIURL: "http://10.73.60.74/cobbler_api",
+		Username: "cobbler",
+		Password: "cobbler",
+	}
+	cb.login()
+	return cb
+}
+
 func (c *Cobbler) login() {
 	args := struct {
 		User string
